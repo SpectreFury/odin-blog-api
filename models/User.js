@@ -10,6 +10,11 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password is required"],
   },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
 });
 
 const User = mongoose.model("User", UserSchema);

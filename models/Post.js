@@ -11,9 +11,8 @@ const PostSchema = new mongoose.Schema(
       required: true,
     },
     author: {
-      type: mongoose.Types.ObjectId,
-      ref: "User",
-      required: true,
+      type: String,
+      required: true
     },
     published: {
       type: Boolean,

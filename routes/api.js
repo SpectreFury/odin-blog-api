@@ -9,16 +9,50 @@ const Comment = require("../models/Comment");
 
 router.get("/post", async (req, res) => {
   try {
-    const posts = await Post.find({});
+    const token = req.headers["x-access-token"];
 
-    if (!posts.length) {
-      throw new Error("No posts found");
+    if (!token) {
+      const posts = await Post.find({ published: true })
+        .populate("comments")
+        .sort({ createdAt: -1 });
+
+      if (!posts.length) {
+        throw new Error("No posts found");
+      }
+
+      res.json({
+        status: "successful",
+        posts,
+      });
+    } else {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.isAdmin) {
+        const posts = await Post.find({})
+          .populate("comments")
+          .sort({ createdAt: -1 });
+        if (!posts.length) {
+          throw new Error("No posts found");
+        }
+
+        res.json({
+          status: "successful",
+          posts,
+        });
+      } else {
+        const posts = await Post.find({ published: true })
+          .populate("comments")
+          .sort({ createdAt: -1 });
+        if (!posts.length) {
+          throw new Error("No posts found");
+        }
+
+        res.json({
+          status: "successful",
+          posts,
+        });
+        return;
+      }
     }
-
-    res.json({
-      status: "successful",
-      posts,
-    });
   } catch (error) {
     res.json({
       status: "error",
@@ -30,7 +64,9 @@ router.get("/post", async (req, res) => {
 
 router.get("/post/:id", async (req, res) => {
   try {
-    const post = await Post.findOne({ _id: req.params.id });
+    const post = await Post.findOne({ _id: req.params.id }).populate(
+      "comments"
+    );
 
     if (!post) {
       throw new Error("No post found");
@@ -53,7 +89,9 @@ router.post("/comment", async (req, res) => {
   try {
     const comment = new Comment({
       text: req.body.text,
+      creator: req.body.creator,
     });
+    await comment.save();
 
     await Post.updateOne(
       {
@@ -132,6 +170,7 @@ router.post("/login", async (req, res) => {
       {
         id: user._id,
         email: user.email,
+        isAdmin: user.isAdmin,
       },
       process.env.JWT_SECRET,
       {
@@ -170,12 +209,34 @@ router.post("/post", async (req, res) => {
     await Post.create({
       title: req.body.title,
       content: req.body.content,
-      author: user.id,
+      author: req.body.author,
     });
 
     res.json({
       status: "successful",
       message: "Post created",
+    });
+  } catch (error) {
+    res.json({
+      status: "error",
+      message: error.message,
+    });
+    console.log(error);
+  }
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    await Post.updateOne(
+      { _id: req.body.postId },
+      {
+        published: req.body.published,
+      }
+    );
+
+    res.json({
+      status: "Successful",
+      message: "Published status was changed successfully",
     });
   } catch (error) {
     res.json({
