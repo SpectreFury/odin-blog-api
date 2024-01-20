@@ -247,4 +247,28 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
+router.delete("/:id", async (req, res) => {
+  try {
+    const token = req.headers["x-access-token"];
+
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    await Post.deleteOne({ _id: req.params.id });
+
+    res.json({
+      status: "successful",
+      message: "Post deleted",
+    });
+
+  } catch (error) {
+    res.json({
+      status: "error",
+      message: error.message,
+    });
+    console.log(error);
+  }
+});
+
 module.exports = router;
